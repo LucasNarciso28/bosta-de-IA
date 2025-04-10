@@ -1,0 +1,19 @@
+{
+  "name": "google-ai",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+ "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google/genai": "^0.8.0",
+    "@google/generative-ai": "^0.24.0",
+    "cors": "^2.8.5",
+    "ors": "^1.0.0"
+  }}

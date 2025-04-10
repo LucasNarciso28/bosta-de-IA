@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Simples com IA</title>
+    
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        #container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        textarea {
+            width: 95%;
+            /* Slightly less than 100% to account for padding/border */
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            display: block;
+            /* Makes it take full width */
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-style: italic;
+            color: #555;
+            min-height: 1.2em;
+            /* Avoid layout shift */
+        }
+
+        #response-area {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            /* Preserva quebras de linha e espaços */
+            min-height: 50px;
+            /* Give it some initial height */
+        }
+
+        #response-area h2 {
+            margin-top: 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <h1>Interagir com Google AI</h1>
+
+        <!-- Usamos um formulário para facilitar o envio com Enter -->
+        <form id="prompt-form">
+            <label for="prompt-input">Digite sua pergunta:</label>
+            <textarea id="prompt-input" rows="4" placeholder="Ex: Escreva um poema sobre a chuva..."></textarea>
+            <button id="submit-button" type="submit">Enviar</button>
+        </form>
+
+        <div id="status"></div>
+        <div id="response-area">
+            <h2>Resposta:</h2>
+            <p id="response-text">A resposta da IA aparecerá aqui...</p>
+        </div>
+    </div>
+
+    <script>
+        // Seleciona os elementos do DOM
+        const form = document.getElementById('prompt-form');
+        const promptInput = document.getElementById('prompt-input');
+        const submitButton = document.getElementById('submit-button');
+        const statusDiv = document.getElementById('status');
+        const responseTextP = document.getElementById('response-text');
+
+        // URL do seu backend (certifique-se que está correto e rodando)
+        const backendUrl = 'http://localhost:3001/api/generate';
+
+        // Adiciona o listener para o envio do formulário
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Impede o recarregamento da página
+
+            const prompt = promptInput.value.trim(); // Pega o valor e remove espaços extras
+
+            if (!prompt) {
+                statusDiv.textContent = 'Por favor, digite algo antes de enviar.';
+                return; // Sai se o prompt estiver vazio
+            }
+
+            // Atualiza a UI para indicar carregamento
+            submitButton.disabled = true;
+            statusDiv.textContent = 'Gerando resposta...';
+            responseTextP.textContent = ''; // Limpa a resposta anterior
+
+            try {
+                // Faz a requisição POST para o seu backend
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt }) // Envia o prompt no corpo
+                });
+
+                // Verifica se a resposta do backend foi OK (status 2xx)
+                if (!response.ok) {
+                    // Tenta ler uma mensagem de erro do corpo da resposta do backend
+                    let errorMsg = `Erro ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.error) {
+                            errorMsg = `Erro do servidor: ${errorData.error}`;
+                        }
+                    } catch (jsonError) {
+                        // Ignora se não conseguir parsear o JSON do erro
+                        console.warn("Não foi possível parsear JSON da resposta de erro do backend.");
+                    }
+                    throw new Error(errorMsg); // Lança um erro para o bloco catch
+                }
+
+                // Se deu tudo certo, pega o JSON da resposta
+                const data = await response.json();
+
+                // Exibe a resposta na página
+                responseTextP.textContent = data.generatedText;
+                statusDiv.textContent = 'Resposta recebida!'; // Limpa status
+
+            } catch (error) {
+                // Se ocorrer qualquer erro (rede, backend, etc.)
+                console.error('Falha ao buscar resposta:', error);
+                statusDiv.textContent = `Erro: ${error.message}`;
+                responseTextP.textContent = 'Não foi possível obter a resposta.'; // Mensagem de erro na área de resposta
+            } finally {
+                // Reabilita o botão, independentemente de sucesso ou falha
+                submitButton.disabled = false;
+                // Opcional: limpar status após um tempo
+                // setTimeout(() => { statusDiv.textContent = ''; }, 5000);
+            }
+        });
+        
+    </script>
+</body>
+
+</html>
